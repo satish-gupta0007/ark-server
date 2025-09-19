@@ -5,7 +5,7 @@ import cors from "cors";
 import { connection } from "./database/dbConnection.js";
 import { errorMiddleware } from "./middlewares/error.js";
 import userRouter from "./routes/userRouter.js";
-import { removeUnverifiedAccounts } from "./automation/removeUnverifiedAccounts.js";
+// import { removeUnverifiedAccounts } from "./automation/removeUnverifiedAccounts.js";
 import categoryRouter from "./routes/categoryRouter.js";
 import s3imagerouter from "./routes/s3ImageRouter.js";
 import subCatgeoryRouter from "./routes/subCategoryRouter.js";
@@ -55,7 +55,7 @@ app.use("/api/v1/sub-category", subCatgeoryRouter);
 
 
 
-removeUnverifiedAccounts();
+// removeUnverifiedAccounts();
 connection();
 
 app.use(errorMiddleware);

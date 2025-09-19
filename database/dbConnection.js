@@ -1,12 +1,24 @@
+// import mongoose from "mongoose";
+
+// export const connection = () => {
+//   mongoose
+//     .connect(process.env.MONGO_URI)
+//     .then(() => {
+//       console.log("Connected to database.");
+//     })
+//     .catch((err) => {
+//       console.log(`Some error occured while connecting to database: ${err}`);
+//     });
+// };
+
 import mongoose from "mongoose";
 
 export const connection = () => {
-  mongoose
+  return mongoose
     .connect(process.env.MONGO_URI)
-    .then(() => {
-      console.log("Connected to database.");
-    })
+    .then(() => console.log("Connected to database."))
     .catch((err) => {
-      console.log(`Some error occured while connecting to database: ${err}`);
+      console.log("Error connecting to database:", err);
+      throw err;
     });
 };
