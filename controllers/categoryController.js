@@ -11,7 +11,7 @@ const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 
 export const addCatgeory = catchAsyncError(async (req, res, next) => {
     try {
-        const { name, isActive, parentId, categoryImage, level,categoryDesc,categoryBrief,addedBy,componentType } = req.body;
+        const { name, isActive, parentId, categoryImage, level,categoryDesc,categoryBrief,addedBy,componentType,order } = req.body;
 
 
         const existingCategory = await Category.findOne({ name });
@@ -19,7 +19,7 @@ export const addCatgeory = catchAsyncError(async (req, res, next) => {
             return next(new ErrorHandler("Category name is already exist.", 400));
         }
 
-        const categoryData = { name, isActive, parentId, categoryImage, level,categoryBrief,categoryDesc,addedBy,componentType };
+        const categoryData = { name, isActive, parentId, categoryImage, level,categoryBrief,categoryDesc,addedBy,componentType,order };
         const category = await Category.create(categoryData);
         const result = await category.save();
         res.status(201).json(result);
@@ -41,9 +41,8 @@ export const getAllCategoryList = catchAsyncError(async (req, res, next) => {
 export const updategCategry = catchAsyncError(async (req, res, next) => {
     try {
         const { id } = req.params; // userId from route
-        const { name, isActive, categoryImage,categoryDesc,categoryBrief,componentType } = req.body;
+        const { name, isActive, categoryImage,categoryDesc,categoryBrief,componentType,order } = req.body;
 // ------------------ REGISTER ------------------
-console.log('::',componentType)
         let category = await Category.findById(id);
         if (!category) {
             return next(new ErrorHandler("Category not found", 404));
@@ -56,8 +55,8 @@ console.log('::',componentType)
         if (categoryBrief !== undefined) category.categoryBrief = categoryBrief;
         if (categoryImage !== undefined) category.categoryImage = categoryImage;
         if (componentType !== undefined) category.componentType = componentType;
+        if (order !== undefined) category.order = order;
 
-console.log('category::',category.componentType)
 
         await category.save();
 
@@ -74,6 +73,17 @@ console.log('category::',category.componentType)
 export const getCategoryList = catchAsyncError(async (req, res, next) => {
     try {
     const all = await Category.find().lean();
+    const tree = buildTree(all, null);
+    res.status(200).json({data:tree});
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+  
+ 
+});
+export const getActiveCategoryList = catchAsyncError(async (req, res, next) => {
+    try {
+    const all = await Category.find({isActive:true}).lean();
     const tree = buildTree(all, null);
     res.status(200).json({data:tree});
   } catch (err) {

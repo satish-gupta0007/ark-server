@@ -40,7 +40,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.get('/', async (req, res) => {
   try {
-    console.log("Request received");
     res.send("Hello from Vercel");
   } catch (err) {
     console.error("Error:", err);

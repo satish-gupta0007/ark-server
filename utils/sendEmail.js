@@ -13,7 +13,6 @@ export const sendEmail = async ({ email, subject, message }) => {
     });
 
     await transporter.verify();
-    console.log("SMTP connection verified");
 
     const options = {
       from: process.env.SMTP_MAIL,
@@ -23,7 +22,6 @@ export const sendEmail = async ({ email, subject, message }) => {
     };
 
     await transporter.sendMail(options);
-    // console.log("smsStatus::", options);
   } catch (error) {
     console.error("Email send error:", error);
   }

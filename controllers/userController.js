@@ -120,7 +120,6 @@ async function sendVerificationCode(
       };
     }
   } catch (error) {
-    console.log(error);
     return {
       success: false,
       message: "Verification code failed to send.",

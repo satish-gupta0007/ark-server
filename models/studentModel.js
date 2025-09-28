@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
 const studentSchema = new mongoose.Schema({
-    name: String,
     email: String,
     password: {
         type: String,
@@ -12,12 +11,6 @@ const studentSchema = new mongoose.Schema({
         maxLength: [32, "Password cannot have more than 32 characters."],
         select: false,
     },
-    //   phone: String,
-    //   userType: {
-    //     type: String,
-    //     required: [true, "User type is required"],    // 👈 already required
-    //     enum: ["student", "college", "admin","super-admin"],       // optional, restrict values
-    //   },
     accountVerified: { type: Boolean, default: false },
     verificationCode: Number,
     verificationCodeExpire: Date,
@@ -41,6 +34,8 @@ const studentSchema = new mongoose.Schema({
     bio: { type: String, default: null },
     isMember: { type: Boolean, default: false },
     isProfileCompleted: { type: Boolean, default: false },
+    profileImage: { type: String, default: null },
+    isStepOneCompleted: { type: Boolean, default: null },
     createdAt: {
         type: Date,
         default: Date.now,

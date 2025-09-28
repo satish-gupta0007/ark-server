@@ -1,5 +1,7 @@
 export const sendToken = (user, statusCode, message, res) => {
   const token = user.generateToken();
+  const userData = user.toObject();
+  delete userData.password;
   res
     .status(statusCode)
     .cookie("token", token, {
@@ -10,7 +12,7 @@ export const sendToken = (user, statusCode, message, res) => {
     })
     .json({
       success: true,
-      user,
+        user: userData,
       message,
       token,
     });

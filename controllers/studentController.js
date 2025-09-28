@@ -40,7 +40,6 @@ export const register = catchAsyncError(async (req, res, next) => {
     if (existingUser) {
       return next(new ErrorHandler("Email is already used.", 400));
     }
-    console.log('existingUser::', existingUser)
     const registerationAttemptsByUser = await Student.find({
       $or: [
         // { phone, accountVerified: false },
@@ -115,7 +114,6 @@ async function sendVerificationCode(
       });
     }
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Verification code failed to send.",
@@ -285,7 +283,6 @@ export const studendResendVerificationCode = catchAsyncError(async (req, res, ne
       result,
     });
   } catch (error) {
-    console.error(error);
     return next(new ErrorHandler("Failed to resend verification code.", 500));
   }
 });
@@ -308,6 +305,7 @@ export const login = catchAsyncError(async (req, res, next) => {
   if (!isPasswordMatched) {
     return next(new ErrorHandler("Invalid email or password.", 400));
   }
+  
   sendToken(user, 200, "User logged in successfully.", res);
 });
 
@@ -372,7 +370,6 @@ export const forgotPassword = catchAsyncError(async (req, res, next) => {
 
 export const getAllUser = catchAsyncError(async (req, res, next) => {
   const users = await Student.find({});
-  console.log('users::', users)
   res.status(200).json({
     success: true,
     users,
@@ -417,13 +414,10 @@ export const updateStudentDetails = catchAsyncError(async (req, res, next) => {
   try {
     const { id } = req.params; // userId from route
     const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
-
-    console.log('id::', id)
-    console.log('body::', req.body)
-
     const { firstName, lastName, date_of_birth,
       phone_number, aadhar_number, blood_group, father_name, mother_name, address,
-      field_of_interest, college_name, enrollment_number, branch, semester, bio, isMember
+      field_of_interest, college_name, enrollment_number, branch, semester, bio, 
+      isMember,profileImage
     } = req.body;
 
     let user = await Student.findById(id);
@@ -447,8 +441,13 @@ export const updateStudentDetails = catchAsyncError(async (req, res, next) => {
     if (semester !== undefined) user.semester = semester;
     if (bio !== undefined) user.bio = bio;
     if (isMember !== undefined) user.isMember = isMember;
+    if (profileImage !== undefined) user.profileImage = profileImage;
+
+    
     if (college_name) {
       user.isProfileCompleted = true;
+    }else {
+      user.isStepOneCompleted = true;
     }
     await user.save();
 

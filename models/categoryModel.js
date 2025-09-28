@@ -8,6 +8,7 @@ const categorySchema = new mongoose.Schema({
   categoryImage:{ type: String, default: null },
   componentType:{ type: String, default: null },
   addedBy:{ type: String, default: null },
+  order:{ type: Number, default: null },
   categoryBrief:{ type: String, default: null },
   categoryDesc:{ type: String, default: null },
   lastUpdateBy:{ type: String, default: null },

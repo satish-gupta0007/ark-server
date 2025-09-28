@@ -20,7 +20,6 @@ export const addImageS3 = catchAsyncError(async (req, res, next) => {
         const form = formidable({ multiples: true }); // Pass options directly to the function
 
         form.parse(req, (err, fields, files) => {
-            console.log('files::',files)
             if (err) {
                 console.error("Form parsing error:", err);
                 return res.status(500).send("Error parsing form data");
@@ -44,7 +43,6 @@ export const addImageS3 = catchAsyncError(async (req, res, next) => {
                 ContentType: file[0].mimetype,
                 ACL: "public-read",
             };
-            console.log('params::',params)
 
             s3.upload(params, (err, data) => {
                 if (err) {
