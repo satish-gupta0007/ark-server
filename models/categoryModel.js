@@ -11,6 +11,7 @@ const categorySchema = new mongoose.Schema({
   order:{ type: Number, default: null },
   categoryBrief:{ type: String, default: null },
   categoryDesc:{ type: String, default: null },
+  isDeleted:{type: Number, default: null},
   lastUpdateBy:{ type: String, default: null },
   createdAt: {
     type: Date,

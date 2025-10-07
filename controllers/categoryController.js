@@ -72,7 +72,7 @@ export const updategCategry = catchAsyncError(async (req, res, next) => {
 
 export const getCategoryList = catchAsyncError(async (req, res, next) => {
     try {
-    const all = await Category.find().lean();
+    const all = await Category.find({}).lean();
     const tree = buildTree(all, null);
     res.status(200).json({data:tree});
   } catch (err) {
@@ -83,7 +83,7 @@ export const getCategoryList = catchAsyncError(async (req, res, next) => {
 });
 export const getActiveCategoryList = catchAsyncError(async (req, res, next) => {
     try {
-    const all = await Category.find({isActive:true}).lean();
+    const all = await Category.find({isActive:true,isDeleted:null}).lean();
     const tree = buildTree(all, null);
     res.status(200).json({data:tree});
   } catch (err) {
@@ -118,6 +118,25 @@ export const getCategoryBasedOnId = catchAsyncError(async (req, res, next) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+export const deleteCategory = catchAsyncError(async (req, res, next) => {
+ try {
+        const { id } = req.params; 
+        let category = await Category.findById(id);
+        if (!category) {
+            return next(new ErrorHandler("Category not found", 404));
+        }
+        category.isDeleted=1;
+        await category.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Category Deleted successfully"
+          });
+    } catch (error) {
+        next(error);
+    }
 });
 
 function buildTree(categories, parentId = null) {

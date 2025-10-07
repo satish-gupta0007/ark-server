@@ -28,11 +28,11 @@ const router = express.Router();
 //user
 router.post("/admin/register", register);
 router.post("/admin/otp-verification", verifyOTP);
-router.put("/admin/update/:id", updateUser);
+router.put("/admin/update/:id",isAuthenticated, updateUser);
 router.post("/admin/login", login);
 router.get("/admin/logout", isAuthenticated, logout);
 router.get("/admin/me", isAuthenticated, getUser);
-router.get("/admin/get-all-users" , getAllUser);
+router.get("/admin/get-all-users" , isAuthenticated,getAllUser);
 router.post("/admin/password/forgot", forgotPassword);
 router.put("/admin/password/reset/:token", resetPassword);
 
@@ -41,16 +41,13 @@ router.post("/student/register", studentRegister);
 router.post("/student/otp-verification", studentVerifyOTP);
 router.post("/student/login", studentLogin);
 router.get("/student/logout", isAuthenticated, studentLogout);
-router.get("/student/me/:id", studentGetuser);
-router.get("/student/get-all-users" , studentGetAllUser);
-router.post("/student/password/forgot", studentForgotpassword);
-router.put("/student/password/reset/:token", studentResetPassword);
+router.get("/student/me/:id", isAuthenticated,studentGetuser);
+router.get("/student/get-all-users" , isAuthenticated,studentGetAllUser);
+router.post("/student/password/forgot", isAuthenticated,studentForgotpassword);
+router.put("/student/password/reset/:token",isAuthenticated, studentResetPassword);
 router.post("/student/resend-otp", studendResendVerificationCode);
-router.post("/student/resend-otp", studendResendVerificationCode);
-router.post("/student/resend-otp", studendResendVerificationCode);
-
-router.post("/student/profile/step1/:id", updateStudentDetails);
-router.post("/student/profile/step2/:id", updateStudentDetails);
+router.post("/student/profile/step1/:id",isAuthenticated, updateStudentDetails);
+router.post("/student/profile/step2/:id", isAuthenticated,updateStudentDetails);
 
 
 
