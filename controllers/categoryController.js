@@ -72,7 +72,7 @@ export const updategCategry = catchAsyncError(async (req, res, next) => {
 
 export const getCategoryList = catchAsyncError(async (req, res, next) => {
     try {
-    const all = await Category.find({}).lean();
+    const all = await Category.find({isActive:true,isDeleted:null}).lean();
     const tree = buildTree(all, null);
     res.status(200).json({data:tree});
   } catch (err) {

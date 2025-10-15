@@ -49,21 +49,29 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// userSchema.methods.generateVerificationCode = function () {
+//   function generateRandomFiveDigitNumber() {
+//     const code = Math.floor(100000 + Math.random() * 900000);
+
+//   this.verificationCode = code;
+//   this.verificationCodeExpire = Date.now() + 10 * 60 * 1000; // expires in 10 mins
+
+//   return code;
+//   }
+//   const verificationCode = generateRandomFiveDigitNumber();
+//   this.verificationCode = verificationCode;
+//   this.verificationCodeExpire = Date.now() + 10 * 60 * 1000;
+
+//   return verificationCode;
+// };
+
 userSchema.methods.generateVerificationCode = function () {
-  function generateRandomFiveDigitNumber() {
-    const code = Math.floor(100000 + Math.random() * 900000);
-
+  const code = Math.floor(100000 + Math.random() * 900000);
   this.verificationCode = code;
-  this.verificationCodeExpire = Date.now() + 10 * 60 * 1000; // expires in 10 mins
-
+  this.verificationCodeExpire = Date.now() + 10 * 60 * 1000; // 10 mins
   return code;
-  }
-  const verificationCode = generateRandomFiveDigitNumber();
-  this.verificationCode = verificationCode;
-  this.verificationCodeExpire = Date.now() + 10 * 60 * 1000;
-
-  return verificationCode;
 };
+
 
 userSchema.methods.generateToken = function () {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {

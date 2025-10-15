@@ -5,6 +5,7 @@ import { sendEmail } from "../utils/sendEmail.js";
 import twilio from "twilio";
 import { sendToken } from "../utils/sendToken.js";
 import crypto from "crypto";
+import {getResetPasswordTemplate,getWelcomeTemplate} from "../utils/templates.js";
 
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 
@@ -38,17 +39,30 @@ export const register = catchAsyncError(async (req, res, next) => {
     const userData = { name, email, userType, password };
 
     const user = await User.create(userData);
-    const verificationCode = await user.generateVerificationCode();
+    // getResetPasswordTemplate()
+    // const verificationCode = await user.generateVerificationCode();
     await user.save();
+    const resetToken = user.generateResetPasswordToken();
+    
+ const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
+const message=getWelcomeTemplate(user.email,resetPasswordUrl);  // await user.save({ validateBeforeSave: false });
 
-    const result = await sendVerificationCode(
-      verificationMethod,
-      verificationCode,
-      name,
-      email
-    );
+  // const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
+  //   const result = await sendVerificationCode(
+  //     verificationMethod,
+  //     verificationCode,
+  //     name,
+  //     email
+  //   );
+   await sendEmail({
+          from: `"Your App Name" <${process.env.SMTP_MAIL}>`,
+      email: user.email,
+      // subject: "Forgot Password",
+        subject: "Welcome to UNITYM 🎉 | Set up your password",
+      message,
+    });
 
-    res.status(201).json(result);
+    res.status(201).json({message:'Registration successful!'});
   } catch (error) {
     next(error);
   }
@@ -93,7 +107,7 @@ async function sendVerificationCode(
 ) {
   try {
     if (verificationMethod === "email") {
-      const message = generateEmailTemplate(verificationCode);
+      const message = generateEmailTemplate(verificationCode); 
       sendEmail({ email, subject: "Your Verification Code", message });
       return {
         success: true,
@@ -246,14 +260,16 @@ export const forgotPassword = catchAsyncError(async (req, res, next) => {
   }
   const resetToken = user.generateResetPasswordToken();
   await user.save({ validateBeforeSave: false });
+const encodedToken = encodeURIComponent(Buffer.from(resetToken).toString("base64"));
+const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${encodedToken}`;
 
-  const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
-  const message = `Your Reset Password Token is:- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then please ignore it.`;
-
+  // const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?{token:${atob(resetToken)}}`;
+  // const message = `Your Reset Password Token is:- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then please ignore it.`;
+  const message=getResetPasswordTemplate(req.body.email,resetPasswordUrl)
   try {
     sendEmail({
       email: user.email,
-      subject: "MERN AUTHENTICATION APP RESET PASSWORD",
+      subject: "Forgot Password",
       message,
     });
     res.status(200).json({
@@ -293,8 +309,7 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
       )
     );
   }
-
-  if (req.body.password !== req.body.confirmPassword) {
+  if (req.body.password !== req.body.cPassword) {
     return next(
       new ErrorHandler("Password & confirm password do not match.", 400)
     );
@@ -303,6 +318,7 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
   user.password = req.body.password;
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
+  user.accountVerified=true;
   await user.save();
 
   sendToken(user, 200, "Reset Password Successfully.", res);

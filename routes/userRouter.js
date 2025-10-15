@@ -25,7 +25,7 @@ import {
 import { isAuthenticated } from "../middlewares/auth.js";
 
 const router = express.Router();
-//user
+//user 
 router.post("/admin/register", register);
 router.post("/admin/otp-verification", verifyOTP);
 router.put("/admin/update/:id",isAuthenticated, updateUser);
@@ -34,7 +34,7 @@ router.get("/admin/logout", isAuthenticated, logout);
 router.get("/admin/me", isAuthenticated, getUser);
 router.get("/admin/get-all-users" , isAuthenticated,getAllUser);
 router.post("/admin/password/forgot", forgotPassword);
-router.put("/admin/password/reset/:token", resetPassword);
+router.post("/admin/password/reset/:token", resetPassword);
 
 //student.
 router.post("/student/register", studentRegister);
