@@ -39,6 +39,7 @@ app.use(cors());
 
 app.use(cookieParser());
 app.use(express.json());
+console.log('application running',process.env.PORT)
 app.use(express.urlencoded({ extended: true }));
 app.get('/', async (req, res) => {
   try {
