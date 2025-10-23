@@ -9,6 +9,8 @@ import userRouter from "./routes/userRouter.js";
 import categoryRouter from "./routes/categoryRouter.js";
 import s3imagerouter from "./routes/s3ImageRouter.js";
 import subCatgeoryRouter from "./routes/subCategoryRouter.js";
+import settingrouter from "./routes/settingRouter.js";
+import abvpRouter from "./routes/abvpRouter.js";
 
 export const app = express();
 config({ path: "./config.env" });
@@ -50,6 +52,9 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/s3-image", s3imagerouter);
 app.use("/api/v1/category", categoryRouter);
 app.use("/api/v1/sub-category", subCatgeoryRouter);
+app.use("/api/v1/settings", settingrouter);
+app.use("/api/v1/abvp", abvpRouter);
+
 
 
 

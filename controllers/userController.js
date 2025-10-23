@@ -5,7 +5,8 @@ import { sendEmail } from "../utils/sendEmail.js";
 import twilio from "twilio";
 import { sendToken } from "../utils/sendToken.js";
 import crypto from "crypto";
-import {getResetPasswordTemplate,getWelcomeTemplate} from "../utils/templates.js";
+import { getResetPasswordTemplate, getWelcomeTemplate } from "../utils/templates.js";
+import { Student } from "../models/studentModel.js";
 
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 
@@ -43,26 +44,26 @@ export const register = catchAsyncError(async (req, res, next) => {
     // const verificationCode = await user.generateVerificationCode();
     await user.save();
     const resetToken = user.generateResetPasswordToken();
-    
- const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
-const message=getWelcomeTemplate(user.email,resetPasswordUrl);  // await user.save({ validateBeforeSave: false });
 
-  // const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
-  //   const result = await sendVerificationCode(
-  //     verificationMethod,
-  //     verificationCode,
-  //     name,
-  //     email
-  //   );
-   await sendEmail({
-          from: `"Your App Name" <${process.env.SMTP_MAIL}>`,
+    const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
+    const message = getWelcomeTemplate(user.email, resetPasswordUrl);  // await user.save({ validateBeforeSave: false });
+
+    // const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
+    //   const result = await sendVerificationCode(
+    //     verificationMethod,
+    //     verificationCode,
+    //     name,
+    //     email
+    //   );
+    await sendEmail({
+      from: `"Your App Name" <${process.env.SMTP_MAIL}>`,
       email: user.email,
       // subject: "Forgot Password",
-        subject: "Welcome to UNITYM 🎉 | Set up your password",
+      subject: "Welcome to UNITYM 🎉 | Set up your password",
       message,
     });
 
-    res.status(201).json({message:'Registration successful!'});
+    res.status(201).json({ message: 'Registration successful!' });
   } catch (error) {
     next(error);
   }
@@ -107,7 +108,7 @@ async function sendVerificationCode(
 ) {
   try {
     if (verificationMethod === "email") {
-      const message = generateEmailTemplate(verificationCode); 
+      const message = generateEmailTemplate(verificationCode);
       sendEmail({ email, subject: "Your Verification Code", message });
       return {
         success: true,
@@ -260,12 +261,12 @@ export const forgotPassword = catchAsyncError(async (req, res, next) => {
   }
   const resetToken = user.generateResetPasswordToken();
   await user.save({ validateBeforeSave: false });
-const encodedToken = encodeURIComponent(Buffer.from(resetToken).toString("base64"));
-const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${encodedToken}`;
+  const encodedToken = encodeURIComponent(Buffer.from(resetToken).toString("base64"));
+  const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${encodedToken}`;
 
   // const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?{token:${atob(resetToken)}}`;
   // const message = `Your Reset Password Token is:- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then please ignore it.`;
-  const message=getResetPasswordTemplate(req.body.email,resetPasswordUrl)
+  const message = getResetPasswordTemplate(req.body.email, resetPasswordUrl);
   try {
     sendEmail({
       email: user.email,
@@ -290,36 +291,89 @@ const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=
 });
 
 // ------------------ RESET PASSWORD ------------------
-export const resetPassword = catchAsyncError(async (req, res, next) => {
-  const { token } = req.params;
-  const resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
+// export const resetPassword = catchAsyncError(async (req, res, next) => {
+//   const { token } = req.params;
+//   const { student } = req.body;
+// console.log('token::',token)
+// console.log('student::',student)
+// const decodedToken = Buffer.from(token, "base64").toString("utf8"); // reverse your encoding
 
-  const user = await User.findOne({
-    resetPasswordToken,
+// const hashedToken = crypto
+//   .createHash("sha256")
+//   .update(decodedToken)
+//   .digest("hex")
+// console.log('hashedToken::',hashedToken)
+//   // const resetPasswordToken = crypto
+//   //   .createHash("sha256")
+//   //   .update(token)
+//   //   .digest("hex");
+
+//   const user = await (student ? Student : User).findOne({
+//     resetPasswordToken: hashedToken,
+//     resetPasswordExpire: { $gt: Date.now() },
+//   });
+//   console.log('user::',user)
+//   if (!user) {
+//     return next(
+//       new ErrorHandler(
+//         "Reset password token is invalid or has been expired.",
+//         400
+//       )
+//     );
+//   }
+//   if (req.body.password !== req.body.cPassword) {
+//     return next(
+//       new ErrorHandler("Password & confirm password do not match.", 400)
+//     );
+//   }
+
+//   user.password = req.body.password;
+//   user.resetPasswordToken = undefined;
+//   user.resetPasswordExpire = undefined;
+//   user.accountVerified=true;
+//   await user.save();
+
+//   sendToken(user, 200, "Reset Password Successfully.", res);
+// });
+
+
+export const resetPassword = catchAsyncError(async (req, res, next) => {
+  // const { token, password, cPassword, isStudent } = req.body;
+  const { token } = req.params;
+  const { student, password, cPassword } = req.body;
+  if (!token) {
+    return next(new ErrorHandler("Token is required.", 400));
+  }
+
+  if (!password || !cPassword) {
+    return next(new ErrorHandler("Password and confirm password are required.", 400));
+  }
+
+  if (password !== cPassword) {
+    return next(new ErrorHandler("Password and confirm password do not match.", 400));
+  }
+  const newToken = btoa(token)
+  // Decode base64 token
+  const decodedToken = Buffer.from(newToken, "base64").toString("utf8");
+  const hashedToken = crypto.createHash("sha256").update(decodedToken).digest("hex");
+  const Model = student ? Student : User;
+  const user = await Model.findOne({
+    resetPasswordToken: hashedToken,
     resetPasswordExpire: { $gt: Date.now() },
   });
   if (!user) {
     return next(
-      new ErrorHandler(
-        "Reset password token is invalid or has been expired.",
-        400
-      )
-    );
-  }
-  if (req.body.password !== req.body.cPassword) {
-    return next(
-      new ErrorHandler("Password & confirm password do not match.", 400)
+      new ErrorHandler("Reset password token is invalid or has expired.", 400)
     );
   }
 
+  // Update password & clear token
   user.password = req.body.password;
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
-  user.accountVerified=true;
+  user.accountVerified = true;
+
   await user.save();
 
-  sendToken(user, 200, "Reset Password Successfully.", res);
+  sendToken(user, 200, "Password reset successfully.", res);
 });

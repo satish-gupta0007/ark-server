@@ -5,6 +5,7 @@ import { sendEmail } from "../utils/sendEmail.js";
 import twilio from "twilio";
 import { sendToken } from "../utils/sendToken.js";
 import crypto from "crypto";
+import { getResetPasswordTemplate } from "../utils/templates.js";
 
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 
@@ -331,37 +332,88 @@ export const getUser = catchAsyncError(async (req, res, next) => {
   });
 });
 
-export const forgotPassword = catchAsyncError(async (req, res, next) => {
-  const user = await Student.findOne({
-    email: req.body.email,
+// export const forgotPassword = catchAsyncError(async (req, res, next) => {
+//   // const {email}=req.body;
+//   // console.log('email:::',email)
+//   // const user = await Student.findOne({
+//   //   email: req.body.email,
+//   // });
+//   // if (!user) {
+//   //   return next(new ErrorHandler("User not found.", 404));
+//   // }
+//   // const resetToken = user.generateResetPasswordToken();
+//   // await user.save({ validateBeforeSave: false });
+//   // const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
 
-  });
+//   // const message = `Your Reset Password Token is:- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then please ignore it.`;
+
+//     const user = await Student.findOne({ email: req.body.email });
+//     if (!user) {
+//       return next(new ErrorHandler("User not found.", 404));
+//     }
+//     const resetToken = user.generateResetPasswordToken();
+//     console.log('resetToken::',resetToken)
+//     await user.save({ validateBeforeSave: false });
+//   const encodedToken = encodeURIComponent(Buffer.from(resetToken).toString("base64"));
+//   const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?isStudent=true&&token=${encodedToken}`;
+//     const message=getResetPasswordTemplate(req.body.email,resetPasswordUrl);
+
+//   try {
+//    sendEmail({
+//       email: user.email,
+//       subject: "Forgot Password",
+//       message,
+//     });
+//     res.status(200).json({
+//       success: true,
+//       message: `Email sent to ${user.email} successfully.`,
+//     });
+//   } catch (error) {
+//     user.resetPasswordToken = undefined;
+//     user.resetPasswordExpire = undefined;
+//     await user.save({ validateBeforeSave: false });
+//     return next(
+//       new ErrorHandler(
+//         error.message ? error.message : "Cannot send reset password token.",
+//         500
+//       )
+//     );
+//   }
+// });
+
+export const forgotPassword = catchAsyncError(async (req, res, next) => {
+  const { email, isStudent } = req.body;
+  const user = await Student.findOne({ email });
   if (!user) {
     return next(new ErrorHandler("User not found.", 404));
   }
   const resetToken = user.generateResetPasswordToken();
   await user.save({ validateBeforeSave: false });
-  const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
 
-  const message = `Your Reset Password Token is:- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then please ignore it.`;
+  const encodedToken = encodeURIComponent(Buffer.from(resetToken).toString("base64"));
+  const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?isStudent=${isStudent}&token=${encodedToken}`;
+  const message = getResetPasswordTemplate(user.email, resetPasswordUrl);
 
   try {
-    sendEmail({
+    await sendEmail({
       email: user.email,
-      subject: "MERN AUTHENTICATION APP RESET PASSWORD",
+      subject: "Forgot Password",
       message,
     });
+
     res.status(200).json({
       success: true,
       message: `Email sent to ${user.email} successfully.`,
     });
   } catch (error) {
+    // Clear token fields if email fails
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save({ validateBeforeSave: false });
+
     return next(
       new ErrorHandler(
-        error.message ? error.message : "Cannot send reset password token.",
+        error.message || "Cannot send reset password token.",
         500
       )
     );
