@@ -36,6 +36,8 @@ const studentSchema = new mongoose.Schema({
     isProfileCompleted: { type: Boolean, default: false },
     profileImage: { type: String, default: null },
     isStepOneCompleted: { type: Boolean, default: null },
+     isDeleted:{type: Number, default: null},
+     isActive:{ type: Boolean, default: null },
     createdAt: {
         type: Date,
         default: Date.now,
@@ -114,7 +116,6 @@ studentSchema.methods.generateResetPasswordToken = function () {
     .createHash("sha256")
     .update(resetToken)
     .digest("hex");
-console.log('this.resetPasswordExpire:::',this.resetPasswordExpire)
   this.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 mins
 
   return resetToken; // return plain token (not hashed)

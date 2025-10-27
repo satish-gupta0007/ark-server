@@ -29,7 +29,7 @@ export const addAboutAbvp = catchAsyncError(async (req, res, next) => {
         });
     } catch (error) {
         next(error);
-    }
+    } 
 });
 
 
@@ -43,7 +43,7 @@ export const getAboutAbvp = catchAsyncError(async (req, res, next) => {
 });
 
 export const getAbvpColleges = catchAsyncError(async (req, res, next) => {
-    let data = await AbvpCollege.find({isDeleted:null});
+    let data = await AbvpCollege.find({isDeleted:null}).sort({ createdAt: -1 });
     res.status(200).json({
         success: true,
         data,

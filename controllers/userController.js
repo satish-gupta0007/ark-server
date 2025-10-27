@@ -42,10 +42,13 @@ export const register = catchAsyncError(async (req, res, next) => {
     const user = await User.create(userData);
     // getResetPasswordTemplate()
     // const verificationCode = await user.generateVerificationCode();
-    await user.save();
-    const resetToken = user.generateResetPasswordToken();
+    const resetToken = user.generateResetPasswordToken(); 
+     await user.save({ validateBeforeSave: false });
 
-    const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
+  const encodedToken = encodeURIComponent(Buffer.from(resetToken).toString("base64"));
+  const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${encodedToken}`;
+
+    // const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
     const message = getWelcomeTemplate(user.email, resetPasswordUrl);  // await user.save({ validateBeforeSave: false });
 
     // const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
@@ -73,7 +76,7 @@ export const register = catchAsyncError(async (req, res, next) => {
 export const updateUser = catchAsyncError(async (req, res, next) => {
   try {
     const { id } = req.params; // userId from route
-    const { name, email, userType, password } = req.body;
+    const { name, email, userType, password,isActive } = req.body;
 
     let user = await User.findById(id);
     if (!user) {
@@ -84,6 +87,8 @@ export const updateUser = catchAsyncError(async (req, res, next) => {
     if (email !== undefined) user.email = email;
     if (userType !== undefined) user.userType = userType;
     if (password !== undefined) user.password = password;
+    if (isActive !== undefined) user.isActive = isActive;
+
 
     await user.save();
 
@@ -213,6 +218,9 @@ export const login = catchAsyncError(async (req, res, next) => {
   );
   if (!user) {
     return next(new ErrorHandler("User not verified.", 400));
+  }else if (!user['isActive']){
+    return next(new ErrorHandler("User is inactive.", 400));
+
   }
   const isPasswordMatched = await user.comparePassword(password);
   if (!isPasswordMatched) {
@@ -246,7 +254,7 @@ export const getUser = catchAsyncError(async (req, res, next) => {
 
 // ------------------ GET ALL USERS ------------------
 export const getAllUser = catchAsyncError(async (req, res, next) => {
-  const users = await User.find({});
+  const users = await User.find({}).sort({ createdAt: -1 });
   res.status(200).json({
     success: true,
     users,
@@ -255,7 +263,7 @@ export const getAllUser = catchAsyncError(async (req, res, next) => {
 
 // ------------------ FORGOT PASSWORD ------------------
 export const forgotPassword = catchAsyncError(async (req, res, next) => {
-  const user = await User.findOne({ email: req.body.email });
+  const user = await User.findOne({ email: req.body.email ,userType: req.body.userType });
   if (!user) {
     return next(new ErrorHandler("User not found.", 404));
   }
@@ -372,7 +380,8 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
   user.accountVerified = true;
-
+user.isDeleted=1;
+// user.isActive=1;
   await user.save();
 
   sendToken(user, 200, "Password reset successfully.", res);

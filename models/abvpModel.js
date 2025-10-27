@@ -2,7 +2,10 @@ import mongoose from "mongoose";
 
 const aboutSchema = new mongoose.Schema({
     description: String,
-
+createdAt: {
+        type: Date,
+        default: Date.now,
+    },
 });
 
 const abvpCollegeSchema = new mongoose.Schema({
@@ -16,7 +19,11 @@ const abvpCollegeSchema = new mongoose.Schema({
         required: [true, "College name is required"],
     },
     status: Boolean,
-    isDeleted:{type: Number, default: null}
+    isDeleted:{type: Number, default: null},
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
 });
 
 
