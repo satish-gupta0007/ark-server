@@ -3,13 +3,18 @@ import nodeMailer from "nodemailer";
 export const sendEmail = async ({ email, subject, message }) => {
   try {
     const transporter = nodeMailer.createTransport({
-      host: process.env.SMTP_HOST,       // use for custom SMTP
-      port: process.env.SMTP_PORT,
-      secure: false,                     // true if using port 465
-      auth: {
-        user: process.env.SMTP_MAIL,
-        pass: process.env.SMTP_PASSWORD,
-      },
+      // host: process.env.SMTP_HOST,       // use for custom SMTP
+      // port: process.env.SMTP_PORT,
+      // secure: false,                     // true if using port 465
+      // auth: {
+      //   user: process.env.SMTP_MAIL,
+      //   pass: process.env.SMTP_PASSWORD,
+      // },
+      service: "SendGrid",
+  auth: {
+    user: "apikey", // this is literally the string "apikey"
+    pass: process.env.SENDGRID_API_KEY,
+  },
     });
 
     await transporter.verify();
