@@ -1,3 +1,4 @@
+import { console } from "inspector";
 import nodeMailer from "nodemailer";
 
 export const sendEmail = async ({ email, subject, message }) => {
@@ -14,6 +15,8 @@ export const sendEmail = async ({ email, subject, message }) => {
   //   rejectUnauthorized: false, // avoid "self signed cert" issues
   // },
   //   });
+console.log('smtp.zoho.in:;;')
+
    const transporter = nodeMailer.createTransport({
       host:'smtp.zoho.in',       // use for custom SMTP
       port: 465,
@@ -23,7 +26,6 @@ export const sendEmail = async ({ email, subject, message }) => {
         pass: 'GpgMdvzRgxQ6',
       }
     });
-
     await transporter.verify();
 console.log('transporter.verify();',await transporter.verify())
     const options = {
