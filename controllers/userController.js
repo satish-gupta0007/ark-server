@@ -276,7 +276,7 @@ export const forgotPassword = catchAsyncError(async (req, res, next) => {
   // const message = `Your Reset Password Token is:- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then please ignore it.`;
   const message = getResetPasswordTemplate(req.body.email, resetPasswordUrl);
   try {
-    sendEmail({
+   await sendEmail({
       email: user.email,
       subject: "Forgot Password",
       message,
