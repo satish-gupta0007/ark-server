@@ -13,10 +13,7 @@ const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 // ------------------ REGISTER ------------------
 export const register = catchAsyncError(async (req, res, next) => {
   try {
-    const { name, email, password, userType, isStudent } = req.body;
-
-    const verificationMethod = "email";
-
+    const { name, email, password, userType, isStudent,isActive } = req.body;
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return next(new ErrorHandler("Email is already used.", 400));
@@ -37,7 +34,7 @@ export const register = catchAsyncError(async (req, res, next) => {
       );
     }
 
-    const userData = { name, email, userType, password };
+    const userData = { name, email, userType, password,isActive };
 
     const user = await User.create(userData);
     // getResetPasswordTemplate()
