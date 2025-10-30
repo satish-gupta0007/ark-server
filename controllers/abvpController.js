@@ -49,6 +49,34 @@ export const getAbvpColleges = catchAsyncError(async (req, res, next) => {
         data,
     });
 });
+export const getActiveAbvpColleges = catchAsyncError(async (req, res, next) => {
+const groupedColleges = await AbvpCollege.aggregate([
+  {
+    $match: {
+      isDeleted: { $in: [null, false] },
+      status: true // only active ones
+    }
+  },
+  { $sort: { createdAt: -1 } },
+  {
+    $group: {
+      _id: "$state",
+      colleges: { $push: "$$ROOT" }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      state: "$_id",
+      colleges: 1
+    }
+  }
+]);
+    res.status(200).json({
+        success: true,
+        groupedColleges,
+    });
+});
 export const addAbvpCollege = catchAsyncError(async (req, res, next) => {
     const { state, collegeName, status } = req.body;
     const existingUser = await AbvpCollege.findOne({

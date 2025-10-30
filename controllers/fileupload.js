@@ -126,3 +126,61 @@ try {
 }
 
 });
+
+// export const getCollegeListJson = catchAsyncError(async (req, res, next) => {
+//   try {
+//     // 1️⃣ Fetch all colleges
+//     const colleges = await College.find().lean();
+
+//     // 2️⃣ Format data (same as before)
+//     const formatted = (colleges && colleges.length > 0)
+//       ? colleges.map(({ Universities, State }) => ({ college:Universities, state:State }))
+//       : []; // empty array if none found
+
+//     // 3️⃣ Return JSON response
+//     res.status(200).json({
+//       success: true,
+//       count: formatted.length,
+//       data: formatted
+//     });
+//   } catch (error) {
+//     console.error("Error fetching college list:", error);
+//     res.status(500).json({ message: "Failed to fetch college list" });
+//   }
+// });
+
+export const getCollegeListJson = catchAsyncError(async (req, res, next) => {
+  try {
+    // 1️⃣ Get search term from query (optional)
+    const search = req.query.search ? req.query.search.trim() : '';
+console.log('req.query.search::',req.query.search)
+    // 2️⃣ Build MongoDB query
+    const query = search
+      ? { Universities: { $regex: search, $options: 'i' } } // case-insensitive search
+      : {};
+
+    // 3️⃣ Fetch matching colleges, limit to avoid huge responses
+    const colleges = await College.find(query)
+      .select('Universities State') // fetch only required fields
+      .limit(20) // limit results for performance
+      .lean();
+
+    // 4️⃣ Format data
+    const formatted = (colleges && colleges.length > 0)
+      ? colleges.map(({ Universities, State }) => ({
+          college: Universities,
+          state: State,
+        }))
+      : [];
+
+    // 5️⃣ Return JSON response
+    res.status(200).json({
+      success: true,
+      count: formatted.length,
+      data: formatted,
+    });
+  } catch (error) {
+    console.error('Error fetching college list:', error);
+    res.status(500).json({ message: 'Failed to fetch college list' });
+  }
+});

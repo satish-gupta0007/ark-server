@@ -3,6 +3,7 @@ import { isAuthenticated } from "../middlewares/auth.js";
 import { addAboutAbvp, addAbvpCollege,
      addAbvpEvent, addAbvpEventCategory, 
      deleteAbvpCollege, getAboutAbvp, getAbvpColleges,
+      getActiveAbvpColleges,
       getAllEvetnsList,
       getEvetnCategoryList, getEvetnsList, updateAbvpEvent, 
       updategAbvpCategoy } from "../controllers/abvpController.js";
@@ -14,6 +15,8 @@ abvpRouter.get("/get-what-is-abvp", isAuthenticated,getAboutAbvp);
 //advp-college
 
 abvpRouter.get("/get-colleges", isAuthenticated,getAbvpColleges);
+abvpRouter.get("/get-active-colleges", isAuthenticated,getActiveAbvpColleges);
+
 abvpRouter.post("/add-college", isAuthenticated,addAbvpCollege);
 abvpRouter.put("/update-college/:id", isAuthenticated,updategAbvpCategoy);
 abvpRouter.delete("/delete-college/:id", isAuthenticated,deleteAbvpCollege);

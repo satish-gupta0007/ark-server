@@ -1,6 +1,6 @@
 import express from "express";
 import { isAuthenticated } from "../middlewares/auth.js";
-import { getCollegeListExcel, uploadCollegeList } from "../controllers/fileupload.js";
+import { getCollegeListExcel, getCollegeListJson, uploadCollegeList } from "../controllers/fileupload.js";
 import multer from "multer";
 import path from 'path';
 // const storage = multer.diskStorage({
@@ -23,7 +23,9 @@ const upload = multer({ storage });
 const settingrouter = express.Router();
 //user
 settingrouter.post("/add-college-list",  upload.single("file"),uploadCollegeList);
-settingrouter.get("/get-college-list-excel", getCollegeListExcel);
+settingrouter.get("/get-college-list-excel",isAuthenticated, getCollegeListExcel);
+settingrouter.get("/get-college-list",getCollegeListJson);
+
 
 
 
