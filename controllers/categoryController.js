@@ -97,7 +97,7 @@ export const getCategoryBasedOnId = catchAsyncError(async (req, res, next) => {
     const { id } = req.params;
 
     // 1. Get all categories
-    const all = await Category.find().lean();
+    const all = await Category.find({isActive:true,isDeleted:null}).lean();
 
     // 2. Build full tree
     const tree = buildTree(all, null);
