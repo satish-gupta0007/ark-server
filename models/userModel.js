@@ -15,8 +15,8 @@ const userSchema = new mongoose.Schema({
   phone: String,
   userType: {
     type: String,
-    required: [true, "User type is required"],    // 👈 already required
-    enum: ["student", "college", "admin","super-admin"],       // optional, restrict values
+    required: [true, "User type is required"],
+    enum: ["student", "college", "admin","super-admin"],
   },
   accountVerified: { type: Boolean, default: false },
   verificationCode: Number,
@@ -42,22 +42,6 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
-
-// userSchema.methods.generateVerificationCode = function () {
-//   function generateRandomFiveDigitNumber() {
-//     const code = Math.floor(100000 + Math.random() * 900000);
-
-//   this.verificationCode = code;
-//   this.verificationCodeExpire = Date.now() + 10 * 60 * 1000; // expires in 10 mins
-
-//   return code;
-//   }
-//   const verificationCode = generateRandomFiveDigitNumber();
-//   this.verificationCode = verificationCode;
-//   this.verificationCodeExpire = Date.now() + 10 * 60 * 1000;
-
-//   return verificationCode;
-// };
 
 userSchema.methods.generateVerificationCode = function () {
   const code = Math.floor(100000 + Math.random() * 900000);

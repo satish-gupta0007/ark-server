@@ -4,85 +4,17 @@ import fs from 'fs';
 import AWS from 'aws-sdk';
 import { config } from "dotenv";
 import sharp from "sharp";
-import multer from "multer";
 config({ path: "./config.env" });
+import path from "path";
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESSKEY_ID,
-  secretAccessKey:process.env.AWS_SECRETACCESSKEY,
-  region: process.env.AWS_REGION, 
+  secretAccessKey: process.env.AWS_SECRETACCESSKEY,
+  region: process.env.AWS_REGION,
 });
 
 
 const s3 = new AWS.S3();
-// ------------------ ADD Image To S3 ------------------
-// export const addImageS3 = catchAsyncError(async (req, res, next) => {
-//     try {
-//         // const form = new formidable.IncomingForm({ multiples: true });
-//         const form = formidable({ multiples: true }); // Pass options directly to the function
-
-//         form.parse(req, async (err, fields, files) => {
-//             if (err) {
-//                 console.error("Form parsing error:", err);
-//                 return res.status(500).send("Error parsing form data");
-//             }
-//             const file = files.image;
-//             if (!file) {
-//                 return res.status(400).send("No file uploaded");
-//             }
-//             const filePath = file[0].filepath || file.path[0];
-//             if (!filePath) {
-//                 return res.status(500).send("File path missing");
-//             }
-//             // Read the file as a buffer
-//             const fileStream = fs.createReadStream(filePath);
-//             const folder = req.query.imageContent + "/";
-//             console.log('req.file::',req.file)
-// const { originalname, buffer } = req.file;
-
-//     // Convert to WebP and preserve transparency
-//     const webpBuffer = await sharp(buffer)
-//       .webp({ quality: 90 }) // you can tweak quality (0–100)
-//       .toBuffer();
-
-//     const newFileName = originalname.replace(/\.[^.]+$/, "") + ".webp";
-
-//     const params = {
-//       Bucket: process.env.AWS_BUCKET_NAME,
-//       Key: folder + file[0].originalFilename,
-//       Body: webpBuffer,
-//       ContentType: "image/webp",
-//       ACL: "public-read",
-//     };
-//             // const params = {
-//             //     Bucket: process.env.AWS_Bucket,
-//             //     Key: folder + file[0].originalFilename,
-//             //     Body: fileStream,
-//             //     ContentType: file[0].mimetype,
-//             //     // ACL: "public-read",
-//             // };
-
-//             // s3.upload(params, (err, data) => {
-//             //     if (err) {
-//             //         console.error("S3 Upload Error:", err);
-//             //         return res.status(500).send("Failed to upload to S3");
-//             //     }
-//             //     res.send({
-//             //         message: "File uploaded successfully",
-//             //         url: data.Location,
-//             //     });
-//             // });
-//              const data = await s3.upload(params).promise();
-
-//     res.send({
-//       message: "File uploaded successfully as WebP",
-//       url: data.Location,
-//     });
-//         });
-//     } catch (error) {
-//         next(error);
-//     }
-// });
 
 export const addImageS3 = catchAsyncError(async (req, res, next) => {
   try {
@@ -90,11 +22,9 @@ export const addImageS3 = catchAsyncError(async (req, res, next) => {
 
     form.parse(req, async (err, fields, files) => {
       if (err) {
-        console.error("Form parsing error:", err);
         return res.status(500).send("Error parsing form data");
       }
-
-      const file = files.image?.[0] || files.image; // handle both array or single file
+      const file = files.image?.[0] || files.image; 
       if (!file) {
         return res.status(400).send("No file uploaded");
       }
@@ -103,11 +33,7 @@ export const addImageS3 = catchAsyncError(async (req, res, next) => {
       if (!filePath) {
         return res.status(500).send("File path missing");
       }
-
-      // Read file from disk
       const inputBuffer = fs.readFileSync(filePath);
-
-      // Convert to WebP and preserve transparency
       const webpBuffer = await sharp(inputBuffer)
         .webp({ quality: 90 })
         .toBuffer();
@@ -121,13 +47,9 @@ export const addImageS3 = catchAsyncError(async (req, res, next) => {
         Key: folder + newFileName,
         Body: webpBuffer,
         ContentType: "image/webp",
-        // ACL: "public-read",
       };
 
-      // Upload to S3
       const data = await s3.upload(params).promise();
-
-      // Clean up local file (optional)
       fs.unlink(filePath, (cleanupErr) => {
         if (cleanupErr) console.warn("Failed to remove temp file:", cleanupErr);
       });
@@ -138,6 +60,93 @@ export const addImageS3 = catchAsyncError(async (req, res, next) => {
       });
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+export const deleteImageS3 = catchAsyncError(async (req, res, next) => {
+  try {
+    const { imageUrl } = req.body;
+    if (!imageUrl || !process.env.AWS_Bucket) throw new Error("Image URL and bucket name are required");
+    const urlParts = imageUrl.split('.com/');
+    if (urlParts.length < 2) throw new Error("Invalid S3 URL");
+    const objectKey = urlParts[1];
+    const params = {
+      Bucket: process.env.AWS_Bucket,
+      Key: objectKey
+    };
+    await s3.deleteObject(params).promise();
+    res.json({
+      message: "Image deleted Successful!",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export const addMultipleImageS3 = catchAsyncError(async (req, res, next) => {
+  try {
+    const form = formidable({
+      multiples: true,
+      keepExtensions: true,
+    });
+
+    form.parse(req, async (err, fields, files) => {
+      if (err) {
+        return res.status(500).json({ message: "Error parsing form data" });
+      }
+
+      let fileArray = [];
+      if (Array.isArray(files.images)) fileArray = files.images;
+      else if (files.images) fileArray = [files.images];
+
+      if (fileArray.length === 0) {
+        return res.status(400).json({ message: "No files uploaded" });
+      }
+      const uploadedFiles = [];
+
+      for (const file of fileArray) {
+
+        const filePath = file.filepath || file.path;
+        if (!filePath) continue;
+
+        try {
+          const inputBuffer = fs.readFileSync(filePath);
+          const webpBuffer = await sharp(inputBuffer)
+            .webp({ quality: 90 })
+            .toBuffer();
+          const folder = (req.query.imageContent || "uploads") + "/";
+          const baseName = path
+            .basename(file.originalFilename || "image", path.extname(file.originalFilename || ""))
+            .replace(/\s+/g, "_");
+          const newFileName = `${baseName}-${Date.now()}.webp`;
+
+          const params = {
+            Bucket: process.env.AWS_BUCKET,
+            Key: folder + newFileName,
+            Body: webpBuffer,
+            ContentType: "image/webp",
+          };
+
+          const { Location } = await s3.upload(params).promise();
+          uploadedFiles.push({
+            original: file.originalFilename,
+            s3Url: Location,
+          });
+
+          fs.unlink(filePath);
+        } catch (uploadErr) {
+          console.error("Error uploading to S3:");
+        }
+      }
+
+      return res.json({
+        message: "Upload complete",
+        files: uploadedFiles,
+      });
+    });
+  }
+  catch (error) {
     next(error);
   }
 });

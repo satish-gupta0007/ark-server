@@ -11,7 +11,8 @@ import s3imagerouter from "./routes/s3ImageRouter.js";
 import subCatgeoryRouter from "./routes/subCategoryRouter.js";
 import settingrouter from "./routes/settingRouter.js";
 import abvpRouter from "./routes/abvpRouter.js";
-
+import  helmet from 'helmet'
+import dashboardRouter from "./routes/dashboardRouter.js";
 export const app = express();
 config({ path: "./config.env" });
 
@@ -36,19 +37,19 @@ const allowedOrigins = ['http://localhost:4200', 'http://localhost:4201','http:/
 // });
 
 app.use(cors());
-
+// app.use(helmet());
 app.use(cookieParser());
 app.use(express.json());
 console.log('application running',process.env.PORT)
 app.use(express.urlencoded({ extended: true }));
 app.get('/', async (req, res) => {
   try {
-    res.send("Hello from Vercel");
+    res.send("Hello from server");
   } catch (err) {
-    console.error("Error:", err);
     res.status(500).send("Something went wrong");
   }
 });
+app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/s3-image", s3imagerouter);
 app.use("/api/v1/category", categoryRouter);

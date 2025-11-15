@@ -16,9 +16,8 @@ const studentSchema = new mongoose.Schema({
     verificationCodeExpire: Date,
     resetPasswordToken: String,
     resetPasswordExpire: Date,
-    // name: { type: Boolean, default: false },
-    firstName:{type: String},
-    lastName:{type: String},
+    firstName: { type: String },
+    lastName: { type: String },
     date_of_birth: { type: String, default: null },
     phone_number: { type: String, default: null },
     aadhar_number: { type: String, default: null },
@@ -36,8 +35,8 @@ const studentSchema = new mongoose.Schema({
     isProfileCompleted: { type: Boolean, default: false },
     profileImage: { type: String, default: null },
     isStepOneCompleted: { type: Boolean, default: null },
-     isDeleted:{type: Number, default: null},
-     isActive:{ type: Boolean, default: null },
+    isDeleted: { type: Number, default: null },
+    isActive: { type: Boolean, default: null },
     createdAt: {
         type: Date,
         default: Date.now,
@@ -56,26 +55,10 @@ studentSchema.methods.comparePassword = async function (enteredPassword) {
 };
 
 studentSchema.methods.generateVerificationCode = function () {
-//     function generateRandomFiveDigitNumber() {
-//        const code = Math.floor(100000 + Math.random() * 900000);
-
-//   this.verificationCode = code;
-//   this.verificationCodeExpire = Date.now() + 10 * 60 * 1000; // expires in 10 mins
-
-//   return code;
-//     }
-//     const verificationCode = generateRandomFiveDigitNumber();
-//     console.log('verificationCode;:',verificationCode)
-//     this.verificationCode = verificationCode;
-//     this.verificationCodeExpire = Date.now() + 10 * 60 * 1000;
-
-//     return verificationCode;
-const code = Math.floor(100000 + Math.random() * 900000); // always 6 digits
-
-  this.verificationCode = code;
-  this.verificationCodeExpire = Date.now() + 10 * 60 * 1000; // 10 mins
-
-  return code;
+    const code = Math.floor(100000 + Math.random() * 900000);
+    this.verificationCode = code;
+    this.verificationCodeExpire = Date.now() + 10 * 60 * 1000;
+    return code;
 };
 
 studentSchema.methods.generateToken = function () {
@@ -84,41 +67,15 @@ studentSchema.methods.generateToken = function () {
     });
 };
 
-// studentSchema.methods.generateResetPasswordToken = function () {
-//     const resetToken = crypto.randomBytes(20).toString("hex");
-
-//     this.resetPasswordToken = crypto
-//         .createHash("sha256")
-//         .update(resetToken)
-//         .digest("hex");
-
-//     this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
-
-//     return resetToken;
-// };
-// studentSchema.methods.generateResetPasswordToken = function () {
-//   const resetToken = crypto.randomBytes(20).toString("hex");
-
-//   this.resetPasswordToken = crypto
-//     .createHash("sha256")
-//     .update(resetToken)
-//     .digest("hex");
-
-//   this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
-
-//   return resetToken;
-// };
-
 studentSchema.methods.generateResetPasswordToken = function () {
-  const resetToken = crypto.randomBytes(20).toString("hex"); // plain token
+    const resetToken = crypto.randomBytes(20).toString("hex");
 
-  this.resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
-  this.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 mins
-
-  return resetToken; // return plain token (not hashed)
+    this.resetPasswordToken = crypto
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
+    this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
+    return resetToken;
 };
 
 export const Student = mongoose.model("StudentUser", studentSchema);

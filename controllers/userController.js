@@ -10,10 +10,9 @@ import { Student } from "../models/studentModel.js";
 
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 
-// ------------------ REGISTER ------------------
 export const register = catchAsyncError(async (req, res, next) => {
   try {
-    const { name, email, password, userType, isStudent,isActive } = req.body;
+    const { name, email, password, userType, isStudent, isActive } = req.body;
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return next(new ErrorHandler("Email is already used.", 400));
@@ -34,27 +33,15 @@ export const register = catchAsyncError(async (req, res, next) => {
       );
     }
 
-    const userData = { name, email, userType, password,isActive };
+    const userData = { name, email, userType, password, isActive };
 
     const user = await User.create(userData);
-    // getResetPasswordTemplate()
-    // const verificationCode = await user.generateVerificationCode();
-    const resetToken = user.generateResetPasswordToken(); 
-     await user.save({ validateBeforeSave: false });
+    const resetToken = user.generateResetPasswordToken();
+    await user.save({ validateBeforeSave: false });
 
-  const encodedToken = encodeURIComponent(Buffer.from(resetToken).toString("base64"));
-  const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${encodedToken}`;
-
-    // const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
+    const encodedToken = encodeURIComponent(Buffer.from(resetToken).toString("base64"));
+    const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${encodedToken}`;
     const message = getWelcomeTemplate(user.email, resetPasswordUrl);  // await user.save({ validateBeforeSave: false });
-
-    // const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
-    //   const result = await sendVerificationCode(
-    //     verificationMethod,
-    //     verificationCode,
-    //     name,
-    //     email
-    //   );
     await sendEmail({
       from: `"Your App Name" <${process.env.SMTP_MAIL}>`,
       email: user.email,
@@ -69,11 +56,10 @@ export const register = catchAsyncError(async (req, res, next) => {
   }
 });
 
-// ------------------ UPDATE USER ------------------
 export const updateUser = catchAsyncError(async (req, res, next) => {
   try {
-    const { id } = req.params; // userId from route
-    const { name, email, userType, password,isActive } = req.body;
+    const { id } = req.params;
+    const { name, email, userType, password, isActive } = req.body;
 
     let user = await User.findById(id);
     if (!user) {
@@ -99,7 +85,6 @@ export const updateUser = catchAsyncError(async (req, res, next) => {
   }
 });
 
-// ------------------ SEND VERIFICATION ------------------
 async function sendVerificationCode(
   verificationMethod,
   verificationCode,
@@ -204,8 +189,8 @@ export const verifyOTP = catchAsyncError(async (req, res, next) => {
   }
 });
 
-// ------------------ LOGIN ------------------
 export const login = catchAsyncError(async (req, res, next) => {
+  try {
   const { email, password } = req.body;
   if (!email || !password) {
     return next(new ErrorHandler("Email and password are required.", 400));
@@ -215,7 +200,7 @@ export const login = catchAsyncError(async (req, res, next) => {
   );
   if (!user) {
     return next(new ErrorHandler("User not verified.", 400));
-  }else if (!user['isActive']){
+  } else if (!user['isActive']) {
     return next(new ErrorHandler("User is inactive.", 400));
 
   }
@@ -223,7 +208,11 @@ export const login = catchAsyncError(async (req, res, next) => {
   if (!isPasswordMatched) {
     return next(new ErrorHandler("Invalid email or password.", 400));
   }
-  sendToken(user, 200, "User logged in successfully.", res);
+  sendToken(user, 200, "User logged in successfully.", res);   
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+ 
 });
 
 // ------------------ LOGOUT ------------------
@@ -240,27 +229,34 @@ export const logout = catchAsyncError(async (req, res, next) => {
     });
 });
 
-// ------------------ GET USER ------------------
 export const getUser = catchAsyncError(async (req, res, next) => {
-  const user = req.user;
+  try {
+     const user = req.user;
   res.status(200).json({
     success: true,
     user,
   });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+ 
 });
 
-// ------------------ GET ALL USERS ------------------
 export const getAllUser = catchAsyncError(async (req, res, next) => {
-  const users = await User.find({}).sort({ createdAt: -1 });
+  try {
+    const users = await User.find({}).sort({ createdAt: -1 });
   res.status(200).json({
     success: true,
     users,
   });
+  } catch (error) {
+      res.status(500).json({ error: error.message });
+  }
+  
 });
 
-// ------------------ FORGOT PASSWORD ------------------
 export const forgotPassword = catchAsyncError(async (req, res, next) => {
-  const user = await User.findOne({ email: req.body.email ,userType: req.body.userType });
+  const user = await User.findOne({ email: req.body.email, userType: req.body.userType });
   if (!user) {
     return next(new ErrorHandler("User not found.", 404));
   }
@@ -268,12 +264,9 @@ export const forgotPassword = catchAsyncError(async (req, res, next) => {
   await user.save({ validateBeforeSave: false });
   const encodedToken = encodeURIComponent(Buffer.from(resetToken).toString("base64"));
   const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${encodedToken}`;
-
-  // const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?{token:${atob(resetToken)}}`;
-  // const message = `Your Reset Password Token is:- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then please ignore it.`;
-  const message = getResetPasswordTemplate(req.body.email, resetPasswordUrl);
+const message = getResetPasswordTemplate(req.body.email, resetPasswordUrl);
   try {
-   await sendEmail({
+    await sendEmail({
       email: user.email,
       subject: "Forgot Password",
       message,
@@ -295,55 +288,7 @@ export const forgotPassword = catchAsyncError(async (req, res, next) => {
   }
 });
 
-// ------------------ RESET PASSWORD ------------------
-// export const resetPassword = catchAsyncError(async (req, res, next) => {
-//   const { token } = req.params;
-//   const { student } = req.body;
-// console.log('token::',token)
-// console.log('student::',student)
-// const decodedToken = Buffer.from(token, "base64").toString("utf8"); // reverse your encoding
-
-// const hashedToken = crypto
-//   .createHash("sha256")
-//   .update(decodedToken)
-//   .digest("hex")
-// console.log('hashedToken::',hashedToken)
-//   // const resetPasswordToken = crypto
-//   //   .createHash("sha256")
-//   //   .update(token)
-//   //   .digest("hex");
-
-//   const user = await (student ? Student : User).findOne({
-//     resetPasswordToken: hashedToken,
-//     resetPasswordExpire: { $gt: Date.now() },
-//   });
-//   console.log('user::',user)
-//   if (!user) {
-//     return next(
-//       new ErrorHandler(
-//         "Reset password token is invalid or has been expired.",
-//         400
-//       )
-//     );
-//   }
-//   if (req.body.password !== req.body.cPassword) {
-//     return next(
-//       new ErrorHandler("Password & confirm password do not match.", 400)
-//     );
-//   }
-
-//   user.password = req.body.password;
-//   user.resetPasswordToken = undefined;
-//   user.resetPasswordExpire = undefined;
-//   user.accountVerified=true;
-//   await user.save();
-
-//   sendToken(user, 200, "Reset Password Successfully.", res);
-// });
-
-
 export const resetPassword = catchAsyncError(async (req, res, next) => {
-  // const { token, password, cPassword, isStudent } = req.body;
   const { token } = req.params;
   const { student, password, cPassword } = req.body;
   if (!token) {
@@ -358,7 +303,6 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
     return next(new ErrorHandler("Password and confirm password do not match.", 400));
   }
   const newToken = btoa(token)
-  // Decode base64 token
   const decodedToken = Buffer.from(newToken, "base64").toString("utf8");
   const hashedToken = crypto.createHash("sha256").update(decodedToken).digest("hex");
   const Model = student ? Student : User;
@@ -371,14 +315,11 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
       new ErrorHandler("Reset password token is invalid or has expired.", 400)
     );
   }
-
-  // Update password & clear token
   user.password = req.body.password;
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
   user.accountVerified = true;
-user.isDeleted=1;
-// user.isActive=1;
+  user.isDeleted = 1;
   await user.save();
 
   sendToken(user, 200, "Password reset successfully.", res);

@@ -10,13 +10,12 @@ export const addSubCatgeory = catchAsyncError(async (req, res, next) => {
         if (existingCategory) {
             return next(new ErrorHandler("Category name is already exist.", 400));
         }
-
         const categoryData = { name, isActive, parentId, categoryImage, level };
         const category = await Category.create(categoryData);
         const result = await category.save();
         res.status(201).json(result);
     } catch (error) {
-        next(error);
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -26,13 +25,13 @@ export const getSubcategoryById = catchAsyncError(async (req, res, next) => {
         const result = await Category.find({ isActive: true });
         res.status(200).json({ data: result });
     } catch (error) {
-        next(error);
+        res.status(500).json({ error: error.message });
     }
 });
 
 export const updategSubCategry = catchAsyncError(async (req, res, next) => {
     try {
-        const { id } = req.params; // userId from route
+        const { id } = req.params;
         const { name, isActive, categoryImage } = req.body;
 
         let category = await Category.findById(id);
@@ -43,15 +42,13 @@ export const updategSubCategry = catchAsyncError(async (req, res, next) => {
         if (name !== undefined) category.name = name;
         if (isActive !== undefined) category.isActive = isActive;
         if (categoryImage !== undefined) category.categoryImage = categoryImage;
-
         await category.save();
-
         res.status(200).json({
             success: true,
             message: "Category updated successfully",
             category,
         });
     } catch (error) {
-        next(error);
+        res.status(500).json({ error: error.message });
     }
 });

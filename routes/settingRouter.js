@@ -1,35 +1,37 @@
 import express from "express";
-import { isAuthenticated } from "../middlewares/auth.js";
-import { getCollegeListExcel, getCollegeListJson, uploadCollegeList } from "../controllers/fileupload.js";
 import multer from "multer";
-import path from 'path';
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => cb(null, "uploads/"),
-//   filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
-// });
+import fs from "fs";
+import path from "path";
+import { isAuthenticated } from "../middlewares/auth.js";
+import {
+  getCollegeListExcel,
+  getCollegeListJson,
+  uploadCollegeList,
+} from "../controllers/fileupload.js";
 
-// const upload = multer({ storage });
-// Auto-create uploads folder
-const uploadDir = path.join(process.cwd(), 'uploads');
-import fs from 'fs';
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+const isGCP = process.env.GOOGLE_CLOUD_PROJECT || process.env.K_SERVICE;
+
+const uploadDir = isGCP
+  ? "/tmp/uploads"
+  : path.join(process.cwd(), "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_")),
 });
 
 const upload = multer({ storage });
 const settingrouter = express.Router();
-//user
-settingrouter.post("/add-college-list",  upload.single("file"),uploadCollegeList);
-settingrouter.get("/get-college-list-excel",isAuthenticated, getCollegeListExcel);
-settingrouter.get("/get-college-list",getCollegeListJson);
 
-
-
-
-
-
+settingrouter.post("/add-college-list",  isAuthenticated,upload.single("file"), uploadCollegeList);
+settingrouter.get("/get-college-list-excel", isAuthenticated, getCollegeListExcel);
+settingrouter.get("/get-college-list", getCollegeListJson);
 
 export default settingrouter;
+

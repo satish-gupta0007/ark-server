@@ -12,29 +12,12 @@ const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 export const register = catchAsyncError(async (req, res, next) => {
   try {
     const { name, email, password, userType, isStudent } = req.body;
-    // if (!name || !email || !phone || !password || !verificationMethod) {
-    //   return next(new ErrorHandler("All fields are required.", 400));
-    // }
-    // function validatePhoneNumber(phone) {
-    //   const phoneRegex = /^\+91\d{10}$/;
-    //   return phoneRegex.test(phone);
-    // }
-
-
-    // if (!validatePhoneNumber(phone)) {
-    //   return next(new ErrorHandler("Invalid phone number.", 400));
-    // }
     const verificationMethod = 'email';
     const existingUser = await Student.findOne({
       $or: [
         {
           email,
-          // accountVerified: true,
         },
-        // {
-        //   phone,
-        //   accountVerified: true,
-        // },
       ],
     });
 
@@ -43,7 +26,6 @@ export const register = catchAsyncError(async (req, res, next) => {
     }
     const registerationAttemptsByUser = await Student.find({
       $or: [
-        // { phone, accountVerified: false },
         { email, accountVerified: false },
       ],
     });
@@ -76,7 +58,7 @@ export const register = catchAsyncError(async (req, res, next) => {
     res.status(200).json(result);
 
   } catch (error) {
-    next(error);
+     res.status(500).json({ error: error.message });
   }
 });
 
@@ -146,27 +128,13 @@ function generateEmailTemplate(verificationCode) {
 export const verifyOTP = catchAsyncError(async (req, res, next) => {
   const { email, otp } = req.body;
 
-  // function validatePhoneNumber(phone) {
-  //   const phoneRegex = /^\+91\d{10}$/;
-  //   return phoneRegex.test(phone);
-  // }
-
-
-  // if (!validatePhoneNumber(phone)) {
-  //   return next(new ErrorHandler("Invalid phone number.", 400));
-  // }
-
   try {
     const userAllEntries = await Student.find({
       $or: [
         {
           email,
           accountVerified: false,
-        },
-        // {
-        //   phone,
-        //   accountVerified: false,
-        // },
+        }
       ],
     }).sort({ createdAt: -1 });
 
@@ -182,7 +150,6 @@ export const verifyOTP = catchAsyncError(async (req, res, next) => {
       await Student.deleteMany({
         _id: { $ne: user._id },
         $or: [
-          // { phone, accountVerified: false },
           { email, accountVerified: false },
         ],
       });
@@ -224,8 +191,6 @@ export const studendResendVerificationCode = catchAsyncError(async (req, res, ne
     }
 
     const now = Date.now();
-
-    // ✅ Cooldown check (60 seconds)
     if (student.lastVerificationCodeSentAt) {
       const elapsed = (now - student.lastVerificationCodeSentAt.getTime()) / 1000;
       if (elapsed < 60) {
@@ -237,10 +202,8 @@ export const studendResendVerificationCode = catchAsyncError(async (req, res, ne
         );
       }
     }
-
-    // ✅ Daily resend limit (max 5 per day)
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // start of day
+    today.setHours(0, 0, 0, 0);
 
     if (
       student.verificationResendCount &&
@@ -256,21 +219,14 @@ export const studendResendVerificationCode = catchAsyncError(async (req, res, ne
       );
     }
 
-    // ✅ Generate new verification code
     const verificationCode = student.generateVerificationCode();
     student.lastVerificationCodeSentAt = now;
-
-    // update daily counter
     if (!student.lastVerificationCodeSentAt || student.lastVerificationCodeSentAt < today) {
-      // new day → reset counter
       student.verificationResendCount = 1;
     } else {
       student.verificationResendCount = (student.verificationResendCount || 0) + 1;
     }
-
     await student.save();
-
-    // ✅ Send code via email
     const result = await sendVerificationCode(
       "email",
       verificationCode,
@@ -332,55 +288,6 @@ export const getUser = catchAsyncError(async (req, res, next) => {
   });
 });
 
-// export const forgotPassword = catchAsyncError(async (req, res, next) => {
-//   // const {email}=req.body;
-//   // console.log('email:::',email)
-//   // const user = await Student.findOne({
-//   //   email: req.body.email,
-//   // });
-//   // if (!user) {
-//   //   return next(new ErrorHandler("User not found.", 404));
-//   // }
-//   // const resetToken = user.generateResetPasswordToken();
-//   // await user.save({ validateBeforeSave: false });
-//   // const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
-
-//   // const message = `Your Reset Password Token is:- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then please ignore it.`;
-
-//     const user = await Student.findOne({ email: req.body.email });
-//     if (!user) {
-//       return next(new ErrorHandler("User not found.", 404));
-//     }
-//     const resetToken = user.generateResetPasswordToken();
-//     console.log('resetToken::',resetToken)
-//     await user.save({ validateBeforeSave: false });
-//   const encodedToken = encodeURIComponent(Buffer.from(resetToken).toString("base64"));
-//   const resetPasswordUrl = `${process.env.FRONTEND_URL}/auth/reset-password?isStudent=true&&token=${encodedToken}`;
-//     const message=getResetPasswordTemplate(req.body.email,resetPasswordUrl);
-
-//   try {
-//    sendEmail({
-//       email: user.email,
-//       subject: "Forgot Password",
-//       message,
-//     });
-//     res.status(200).json({
-//       success: true,
-//       message: `Email sent to ${user.email} successfully.`,
-//     });
-//   } catch (error) {
-//     user.resetPasswordToken = undefined;
-//     user.resetPasswordExpire = undefined;
-//     await user.save({ validateBeforeSave: false });
-//     return next(
-//       new ErrorHandler(
-//         error.message ? error.message : "Cannot send reset password token.",
-//         500
-//       )
-//     );
-//   }
-// });
-
 export const forgotPassword = catchAsyncError(async (req, res, next) => {
   const { email, isStudent } = req.body;
   const user = await Student.findOne({ email });
@@ -406,7 +313,6 @@ export const forgotPassword = catchAsyncError(async (req, res, next) => {
       message: `Email sent to ${user.email} successfully.`,
     });
   } catch (error) {
-    // Clear token fields if email fails
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save({ validateBeforeSave: false });
@@ -464,7 +370,7 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
 
 export const updateStudentDetails = catchAsyncError(async (req, res, next) => {
   try {
-    const { id } = req.params; // userId from route
+    const { id } = req.params;
     const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
     const { firstName, lastName, date_of_birth,
       phone_number, aadhar_number, blood_group, father_name, mother_name, address,
@@ -509,6 +415,6 @@ export const updateStudentDetails = catchAsyncError(async (req, res, next) => {
       user,
     });
   } catch (error) {
-    next(error);
+     res.status(500).json({ error: error.message });
   }
 });
