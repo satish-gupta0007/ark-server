@@ -37,7 +37,7 @@ const allowedOrigins = ['http://localhost:4200', 'http://localhost:4201','http:/
 // });
 
 app.use(cors());
-// app.use(helmet());
+app.use(helmet());
 app.use(cookieParser());
 app.use(express.json());
 console.log('application running',process.env.PORT)
