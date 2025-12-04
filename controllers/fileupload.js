@@ -107,11 +107,13 @@ try {
 
 export const getCollegeListJson = catchAsyncError(async (req, res, next) => {
   try {
-    const search = req.query.search ? req.query.search.trim() : '';
-    const query = search
-      ? { Universities: { $regex: search, $options: 'i' } } 
-      : {};
+    const search = req.query.search?.trim() || "";
+    const state = req.query.State?.trim() || "";
 
+    let query = {};
+
+    if (state) query.State = state;
+    if (search) query.Universities = { $regex: search, $options: "i" };
     const colleges = await College.find(query)
       .select('Universities State') 
       .limit(20) 

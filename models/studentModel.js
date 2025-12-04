@@ -19,6 +19,7 @@ const studentSchema = new mongoose.Schema({
     firstName: { type: String },
     lastName: { type: String },
     date_of_birth: { type: String, default: null },
+    studentId: { type: String, default: null },
     phone_number: { type: String, default: null },
     aadhar_number: { type: String, default: null },
     blood_group: { type: String, default: null },
@@ -62,11 +63,18 @@ studentSchema.methods.generateVerificationCode = function () {
 };
 
 studentSchema.methods.generateToken = function () {
-    return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
-        expiresIn: process.env.JWT_EXPIRE,
+    return jwt.sign({ id: this._id,role: "student", app: "student"  }, process.env.JWT_SECRET_KEY, {
+        expiresIn: "4h",
     });
 };
 
+studentSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
+    { id: this._id, role: "student", app: "student" },
+    process.env.JWT_REFRESH_SECRET_KEY,
+    { expiresIn: "30d"}
+  );
+};
 studentSchema.methods.generateResetPasswordToken = function () {
     const resetToken = crypto.randomBytes(20).toString("hex");
 

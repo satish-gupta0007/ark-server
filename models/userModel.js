@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema({
   verificationCodeExpire: Date,
   resetPasswordToken: String,
   resetPasswordExpire: Date,
+  collegeName:{ type: String, default: null },
   isAdminUser: { type: Boolean, default: true },
    isDeleted:{type: Number, default: null},
      isActive:{ type: Boolean, default: null },
@@ -52,11 +53,18 @@ userSchema.methods.generateVerificationCode = function () {
 
 
 userSchema.methods.generateToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
-    expiresIn: process.env.JWT_EXPIRE,
+  return jwt.sign({ id: this._id,role: "user", app: "user"  }, process.env.JWT_SECRET_KEY, {
+    expiresIn: "4h",
   });
 };
 
+userSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
+    { id: this._id, role: "user", app: "user" },
+    process.env.JWT_REFRESH_SECRET_KEY,
+    { expiresIn: "30d"}
+  );
+};
 userSchema.methods.generateResetPasswordToken = function () {
   const resetToken = crypto.randomBytes(20).toString("hex");
 

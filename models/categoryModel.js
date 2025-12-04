@@ -1,17 +1,17 @@
 import mongoose from "mongoose";
 
 const categorySchema = new mongoose.Schema({
-  name: String,
-  level: { type: Number, default: 0 },
-  parentId: { type: String, default: null },
-  isActive:{ type: Boolean, default: null },
-  categoryImage:{ type: String, default: null },
-  componentType:{ type: String, default: null },
-  addedBy:{ type: String, default: null },
-  order:{ type: Number, default: null },
-  categoryBrief:{ type: String, default: null },
-  categoryDesc:{ type: String, default: null },
-  isDeleted:{type: Number, default: null},
+  categoryName: {
+        type: String,
+        required: true,
+    },
+    categoryImage: {
+        type: String
+    },
+    isActive: {
+        type: Number
+    },
+  isDeleted:{type: Number, default: 0},
   lastUpdateBy:{ type: String, default: null },
   createdAt: {
     type: Date,

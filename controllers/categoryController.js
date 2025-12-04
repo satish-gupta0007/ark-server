@@ -1,130 +1,72 @@
-import ErrorHandler from "../middlewares/error.js";
 import { catchAsyncError } from "../middlewares/catchAsyncError.js";
-import twilio from "twilio";
 import { Category } from "../models/categoryModel.js";
 
-export const addCatgeory = catchAsyncError(async (req, res, next) => {
+export const addCategory = catchAsyncError(async (req, res, next) => {
     try {
-        const { name, isActive, parentId, categoryImage, level,categoryDesc,categoryBrief,addedBy,componentType,order } = req.body;
-        const existingCategory = await Category.findOne({ name });
-        if (existingCategory) {
-            return next(new ErrorHandler("Category name is already exist.", 400));
+        console.log('req.body::', req.body)
+        let toStoreCategoryInfo = {
+            categoryName: req.body.categoryName,
+            categoryImage: req.body.image,
+            isActive: 1
         }
-        const categoryData = { name, isActive, parentId, categoryImage, level,categoryBrief,categoryDesc,addedBy,componentType,order };
-        const category = await Category.create(categoryData);
-        const result = await category.save();
-        res.status(201).json(result);
+        const isExistData = await Category.find({ categoryName: req.body.categoryName });
+        if (isExistData.length > 0) {
+            res.status(400).json({ message: 'Category Name cannot be same' });
+        } else {
+            await Category.create(toStoreCategoryInfo);
+            res.status(200).json({ message: 'success', statusCode: 200 });
+        }
     } catch (error) {
-        next(error);
+        console.log('error::', error)
+        res.status(500).json({ message: "An error occured" });
     }
 });
-
 
 export const getAllCategoryList = catchAsyncError(async (req, res, next) => {
     try {
-        const result = await Category.find({ isActive: true });
-        res.status(200).json({ data: result });
+        const isExistData = await Category.find({ isDeleted: 0 });
+        console.log('isExistData::',isExistData)
+        res.status(200).json({ message: 'success', data: isExistData });
     } catch (error) {
-        next(error);
+        res.status(500).json({ message: "An error occured" });
     }
 });
 
-export const updategCategry = catchAsyncError(async (req, res, next) => {
+export const getAllActiveCategoryList = catchAsyncError(async (req, res, next) => {
     try {
-        const { id } = req.params;
-        const { name, isActive, categoryImage,categoryDesc,categoryBrief,componentType,order } = req.body;
-        let category = await Category.findById(id);
-        if (!category) {
-            return next(new ErrorHandler("Category not found", 404));
+        const isExistData = await Category.find({ isDeleted: 0,isActive:1 });
+        res.status(200).json({ message: 'success', data: isExistData });
+    } catch (error) {
+        res.status(500).json({ message: "An error occured" });
+    }
+});
+
+export const updateCategory = catchAsyncError(async (req, res, next) => {
+    try {
+        let toStoreCategoryInfo = {
+          categoryName: req.body.categoryName,
+          categoryImage: req.body.updateImage ? req.body.image : req.body.productImage,
+          isActive: req.body.status ? 1 : 0
         }
-        if (name !== undefined) category.name = name;
-        if (isActive !== undefined) category.isActive = isActive;
-        if (categoryImage !== undefined) category.categoryImage = categoryImage;
-        if (categoryDesc !== undefined) category.categoryDesc = categoryDesc;
-        if (categoryBrief !== undefined) category.categoryBrief = categoryBrief;
-        if (categoryImage !== undefined) category.categoryImage = categoryImage;
-        if (componentType !== undefined) category.componentType = componentType;
-        if (order !== undefined) category.order = order;
-        await category.save();
-        res.status(200).json({
-            success: true,
-            message: "Category updated successfully",
-            category,
-        });
+        await Category.findOneAndUpdate({ _id: req.params.categoryId }, toStoreCategoryInfo, { upsert: true } )
+          res.status(200).json({ message: 'update successful!', statusCode: 200 })
     } catch (error) {
-       res.status(500).json({ error: error.message });
+        console.log('error::', error)
+        res.status(500).json({ message: "An error occured" });
     }
-});
-
-export const getCategoryList = catchAsyncError(async (req, res, next) => {
-    try {
-    const all = await Category.find({isActive:true,isDeleted:null}).lean();
-    const tree = buildTree(all, null);
-    res.status(200).json({data:tree});
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-  
- 
-});
-export const getActiveCategoryList = catchAsyncError(async (req, res, next) => {
-    try {
-    const all = await Category.find({isActive:true,isDeleted:null}).lean();
-    const tree = buildTree(all, null);
-    res.status(200).json({data:tree});
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-  
- 
-});
-export const getCategoryBasedOnId = catchAsyncError(async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const all = await Category.find({isActive:true,isDeleted:null}).lean();
-    const tree = buildTree(all, null);
-    function findNode(nodeList, nodeId) {
-      for (const node of nodeList) {
-        if (node._id.toString() === nodeId) return node;
-        const found = findNode(node.children || [], nodeId);
-        if (found) return found;
-      }
-      return null;
-    }
-
-    const subtree = findNode(tree, id);
-
-    res.status(200).json({ data: subtree });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
 });
 
 export const deleteCategory = catchAsyncError(async (req, res, next) => {
- try {
-        const { id } = req.params; 
-        let category = await Category.findById(id);
-        if (!category) {
-            return next(new ErrorHandler("Category not found", 404));
+    try {
+        let toStoreCategoryInfo = {
+          categoryName: req.body.categoryName,
+          categoryImage: req.body.updateImage ? req.body.image : req.body.productImage,
+          isActive: req.body.status ? 1 : 0
         }
-        category.isDeleted=1;
-        await category.save();
-
-        res.status(200).json({
-            success: true,
-            message: "Category Deleted successfully"
-          });
+        await Category.findOneAndUpdate({ _id: req.params.categoryId }, toStoreCategoryInfo, { upsert: true } )
+          res.status(200).json({ message: 'update successful!', statusCode: 200 })
     } catch (error) {
-       res.status(500).json({ error: error.message });
+        console.log('error::', error)
+        res.status(500).json({ message: "An error occured" });
     }
 });
-
-function buildTree(categories, parentId = null) {
-  return categories
-    .filter(cat => (cat.parentId ? cat.parentId.toString() : null) === parentId)
-    .map(cat => ({
-      ...cat,
-      children: buildTree(categories, cat._id.toString())
-    }));
-}
-

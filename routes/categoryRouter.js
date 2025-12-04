@@ -1,16 +1,13 @@
 import express from "express";
-import { isAuthenticated } from "../middlewares/auth.js";
-import { addCatgeory, deleteCategory, getActiveCategoryList, getAllCategoryList, getCategoryBasedOnId, getCategoryList, updategCategry } from "../controllers/categoryController.js";
+import { addCategory, deleteCategory, getAllActiveCategoryList,
+     getAllCategoryList, updateCategory } 
+     from "../controllers/categoryController.js";
 
 const categoryRouter = express.Router();
-categoryRouter.post("/add",isAuthenticated, addCatgeory);
-categoryRouter.get("/get-all",isAuthenticated, getAllCategoryList);
-categoryRouter.put("/update/:id",isAuthenticated,updategCategry);
-categoryRouter.get("/get-list",isAuthenticated,getCategoryList);
-categoryRouter.get("/get-active-list",isAuthenticated,getActiveCategoryList);
-categoryRouter.get("/get/:id",isAuthenticated,getCategoryBasedOnId);
-categoryRouter.delete("/delete/:id",isAuthenticated,deleteCategory);
-
-
+categoryRouter.post("/add", addCategory);
+categoryRouter.get("/getAll", getAllCategoryList);
+categoryRouter.put("/update/:categoryId",updateCategory);
+categoryRouter.delete("/delete/:id",deleteCategory);
+categoryRouter.get("/get-active-category",getAllActiveCategoryList);
 
 export default categoryRouter;

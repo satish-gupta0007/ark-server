@@ -7,6 +7,7 @@ import { sendToken } from "../utils/sendToken.js";
 import crypto from "crypto";
 import { getResetPasswordTemplate, getWelcomeTemplate } from "../utils/templates.js";
 import { Student } from "../models/studentModel.js";
+import jwt from "jsonwebtoken";
 
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 
@@ -33,8 +34,10 @@ export const register = catchAsyncError(async (req, res, next) => {
       );
     }
 
-    const userData = { name, email, userType, password, isActive };
-
+    let userData = { name, email, userType, password, isActive };
+if (userType=='college'){
+userData['collegeName']=req.body.collegeName;
+}
     const user = await User.create(userData);
     const resetToken = user.generateResetPasswordToken();
     await user.save({ validateBeforeSave: false });
@@ -59,7 +62,7 @@ export const register = catchAsyncError(async (req, res, next) => {
 export const updateUser = catchAsyncError(async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, email, userType, password, isActive } = req.body;
+    const { name, email, userType, password, status } = req.body;
 
     let user = await User.findById(id);
     if (!user) {
@@ -70,7 +73,7 @@ export const updateUser = catchAsyncError(async (req, res, next) => {
     if (email !== undefined) user.email = email;
     if (userType !== undefined) user.userType = userType;
     if (password !== undefined) user.password = password;
-    if (isActive !== undefined) user.isActive = isActive;
+    if (status !== undefined) user.isActive = status ? 1 :0;
 
 
     await user.save();
@@ -215,11 +218,41 @@ export const login = catchAsyncError(async (req, res, next) => {
  
 });
 
+export const adminRefreshToken = async (req, res,next) => {
+  try {
+    console.log('req.cookies::',req.cookies)
+    console.log('admin-refresh')
+    const refreshToken = req.cookies.adminRefresh;
+  if (!refreshToken) {
+    return next(new ErrorHandler("No refresh token provided", 401));
+  }
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET_KEY);
+    console.log('decoded::',decoded)
+    const user = await User.findById(decoded.id);
+    if (!user) return next(new ErrorHandler("User not found", 404));
+    const newAccessToken = user.generateToken();
+    console.log('newAccessToken::',newAccessToken)
+    res.cookie("adminToken", newAccessToken, {
+      httpOnly: true,
+      expires: new Date(Date.now() + 15 * 60 * 1000),
+      sameSite: "strict",
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Token refreshed",
+    });
+
+  } catch (err) {
+    return next(new ErrorHandler("Invalid refresh token", 401));
+  }
+};
+
+
 // ------------------ LOGOUT ------------------
 export const logout = catchAsyncError(async (req, res, next) => {
   res
     .status(200)
-    .cookie("token", "", {
+    .cookie("adminToken", "", {
       expires: new Date(Date.now()),
       httpOnly: true,
     })
