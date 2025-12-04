@@ -27,6 +27,7 @@ const allowedOrigins = ['http://localhost:4200', 'http://localhost:4201',
   'http://localhost:5173', 'http://localhost:4400',
   'http://localhost:4100', 'http://localhost:8100',
   'https://ark-server-6lv5.onrender.com',
+  "https://www.arkbylaxmi.in",
   "http://localhost:4400", "http://localhost:4300"];
 
 app.use(cors({
@@ -35,7 +36,7 @@ app.use(cors({
   ],
   // credentials: true
 }));
-
+app.options("*", cors());
 // app.use(helmet());
 app.use(cookieParser());
 app.use(express.json());
