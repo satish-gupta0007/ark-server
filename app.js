@@ -33,10 +33,10 @@ app.use(cors({
   origin: [
     allowedOrigins
   ],
-  credentials: true
+  // credentials: true
 }));
 
-app.use(helmet());
+// app.use(helmet());
 app.use(cookieParser());
 app.use(express.json());
 console.log('application running', process.env.PORT)
